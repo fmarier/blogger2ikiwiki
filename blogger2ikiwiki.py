@@ -39,13 +39,36 @@ def get_title(entry):
     return textnode.nodeValue
 
 
+def get_permalink(entry):
+    links = entry.getElementsByTagName('link')
+    for link in links:
+        schemeattr = link.getAttribute('rel')
+        typeattr = link.getAttribute('type')
+        if schemeattr == 'alternate' and typeattr == 'text/html':
+            return link.getAttribute('href')
+
+
+def get_content(entry):
+    contenttag = entry.getElementsByTagName('content').item(0)
+    textnode = contenttag.firstChild
+    return textnode.nodeValue
+
 def print_post(entry, tags):
     published_date = get_date(entry, 'published')
     updated_date = get_date(entry, 'updated')
+    date = published_date + ' (updated on ' + updated_date + ')'
+
     author = get_author(entry)
     title = get_title(entry)
-    permalink = 'TODO'
-    print title + ' [' + ', '.join(tags) + '] by ' + author
+    permalink = get_permalink(entry)
+    content = get_content(entry)
+    print title
+    print '  by ' + author + ' on ' + date
+    print '  ' + permalink
+    print '  [' + ', '.join(tags) + ']'
+    print '------------------------------------------------'
+    print content
+    print '------------------------------------------------'
 
 def print_comment(entry):
     print get_author(entry)
