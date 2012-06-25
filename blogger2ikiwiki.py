@@ -17,7 +17,10 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+import sys
 import xml.dom.minidom as minidom
+
+from html2text import html2text
 
 
 def get_author(entry):
@@ -51,7 +54,9 @@ def get_permalink(entry):
 def get_content(entry):
     contenttag = entry.getElementsByTagName('content').item(0)
     textnode = contenttag.firstChild
-    return textnode.nodeValue
+    html = textnode.nodeValue
+    return html2text(html)
+
 
 def print_post(entry, tags):
     published_date = get_date(entry, 'published')
@@ -62,16 +67,19 @@ def print_post(entry, tags):
     title = get_title(entry)
     permalink = get_permalink(entry)
     content = get_content(entry)
-    print title
-    print '  by ' + author + ' on ' + date
-    print '  ' + permalink
-    print '  [' + ', '.join(tags) + ']'
-    print '------------------------------------------------'
-    print content
-    print '------------------------------------------------'
+
+    s = title + "\n"
+    s += '  by ' + author + ' on ' + date + "\n"
+    s += '  ' + permalink + "\n"
+    s += '  [' + ', '.join(tags) + ']' + "\n"
+    s += '------------------------------------------------' + "\n"
+    s += content + "\n"
+    s += '------------------------------------------------' + "\n"
+    return s
+
 
 def print_comment(entry):
-    print get_author(entry)
+    pass  # TODO
 
 
 document = minidom.parse('feedingthecloud.xml')
@@ -98,4 +106,5 @@ for entry in entries:
             tags.append(term)
 
     if is_post:
-        print_post(entry, tags)
+        post = print_post(entry, tags)
+        sys.stdout.write(post.encode('utf8'))
