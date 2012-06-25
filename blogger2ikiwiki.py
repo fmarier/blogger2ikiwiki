@@ -23,6 +23,10 @@ import xml.dom.minidom as minidom
 from html2text import html2text
 
 
+# Change this to point to the name of your Blogger export file
+ATOM_BACKUP_FILENAME = 'feedingthecloud.xml'
+
+
 def get_author(entry):
     author = entry.getElementsByTagName('author').item(0)
     nametag = author.getElementsByTagName('name').item(0)
@@ -82,7 +86,7 @@ def print_comment(entry):
     pass  # TODO
 
 
-document = minidom.parse('feedingthecloud.xml')
+document = minidom.parse(ATOM_BACKUP_FILENAME)
 feed = document.getElementsByTagName('feed').item(0)
 
 entries = feed.getElementsByTagName('entry')
