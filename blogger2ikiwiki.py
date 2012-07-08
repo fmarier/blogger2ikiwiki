@@ -17,21 +17,34 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+from hashlib import md5
+import os
 import sys
+from urlparse import urlparse
 import xml.dom.minidom as minidom
 
 from html2text import html2text
 
 
 # Change this to point to the name of your Blogger export file
-ATOM_BACKUP_FILENAME = 'feedingthecloud.xml'
+ATOM_BACKUP_FILENAME = '../feedingthecloud.xml'
 
+LICENSE_LINK = '[Creative Commons Attribution-Share Alike 3.0 New Zealand License](http://creativecommons.org/licenses/by-sa/3.0/nz/)'
 
-def get_author(entry):
+def get_author_name(entry):
     author = entry.getElementsByTagName('author').item(0)
     nametag = author.getElementsByTagName('name').item(0)
     textnode = nametag.firstChild
     return textnode.nodeValue
+
+
+def get_author_uri(entry):
+    author = entry.getElementsByTagName('author').item(0)
+    uritags = author.getElementsByTagName('uri')
+    if uritags:
+        textnode = uritags.item(0).firstChild
+        return textnode.nodeValue
+    return None
 
 
 def get_date(entry, datename):
@@ -52,7 +65,8 @@ def get_permalink(entry):
         schemeattr = link.getAttribute('rel')
         typeattr = link.getAttribute('type')
         if schemeattr == 'alternate' and typeattr == 'text/html':
-            return link.getAttribute('href')
+            href = link.getAttribute('href').split('?')
+            return href[0]
 
 
 def get_content(entry):
@@ -62,28 +76,82 @@ def get_content(entry):
     return html2text(html)
 
 
+def extract_filename(permalink):
+    components = urlparse(permalink)
+    paths = components.path.split('/')
+    filename = paths[-1]
+    return filename.split('.html')[0] + '.mdwn'
+
+
 def print_post(entry, tags):
     published_date = get_date(entry, 'published')
     updated_date = get_date(entry, 'updated')
-    date = published_date + ' (updated on ' + updated_date + ')'
 
-    author = get_author(entry)
+    author = get_author_name(entry)
     title = get_title(entry)
     permalink = get_permalink(entry)
+    filename = extract_filename(permalink)
     content = get_content(entry)
 
-    s = title + "\n"
-    s += '  by ' + author + ' on ' + date + "\n"
-    s += '  ' + permalink + "\n"
-    s += '  [' + ', '.join(tags) + ']' + "\n"
-    s += '------------------------------------------------' + "\n"
+    s = '[[!meta title="' + title + '"]]' + "\n"
+    s += '[[!meta date="' + published_date + '"]]' + "\n"
+    s += '[[!meta license="' + LICENSE_LINK + '"]]' + "\n"
     s += content + "\n"
-    s += '------------------------------------------------' + "\n"
-    return s
+    for tag in tags:
+        s += "[[!tag " + tag + "]] "
+    return (filename, s)
 
 
 def print_comment(entry):
-    pass  # TODO
+    published_date = get_date(entry, 'published')
+    updated_date = get_date(entry, 'updated')
+
+    author_name = get_author_name(entry)
+    author_uri = get_author_uri(entry)
+
+    permalink = get_permalink(entry)
+    filename = extract_filename(permalink)
+    content = get_content(entry)
+
+    s = '[[!comment format=mdwn' + "\n"
+    if author_uri:
+        s += ' username="' + author_uri + '"' + "\n"
+        s += ' nickname="' + author_name + '"' + "\n"
+    else:
+        s += ' claimedauthor="' + author_name + '"' + "\n"
+    s += ' subject=""' + "\n"
+    s += ' date="' + published_date + '"' + "\n"
+    s += ' content="""' + "\n"
+    s += content + "\n"
+    s += '"""]]' + "\n"
+
+    return (filename, s)
+
+
+numbers = {}
+def comment_number(post_filename):
+    if post_filename not in numbers:
+        numbers[post_filename] = 0
+
+    numbers[post_filename] += 1
+    return str(numbers[post_filename])
+
+
+def save_file(filename, contents):
+    with open(filename, 'w') as f:
+        f.write(contents.encode('utf8'))
+    f.close()
+
+
+def save_comment(post_filename, contents):
+    directory = post_filename.split('.mdwn')[0]
+    if not os.path.isdir(directory):
+        os.mkdir(directory)
+
+    comment_guid = md5(contents.encode('utf8')).hexdigest()
+    filename = 'comment_' + comment_number(post_filename) + '_' + comment_guid + '._comment'
+
+    return save_file(directory + '/' + filename, contents)
 
 
 document = minidom.parse(ATOM_BACKUP_FILENAME)
@@ -110,5 +178,8 @@ for entry in entries:
             tags.append(term)
 
     if is_post:
-        post = print_post(entry, tags)
-        sys.stdout.write(post.encode('utf8'))
+        (filename, post) = print_post(entry, tags)
+        save_file(filename, post)
+    elif is_comment:
+        (filename, comment) = print_comment(entry)
+        save_comment(filename, comment)
