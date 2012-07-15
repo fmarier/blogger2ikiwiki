@@ -711,6 +711,8 @@ ordered_list_matcher = re.compile(r'\d+\.\s')
 unordered_list_matcher = re.compile(r'[-\*\+]\s')
 
 def skipwrap(para):
+    return True # wrap() breaks links and pre-formatted blocks, let's disable it (francois
+
     # If the text begins with four spaces or one tab, it's a code block; don't wrap
     if para[0:4] == '    ' or para[0] == '\t':
         return True
