@@ -73,6 +73,11 @@ def get_content(entry):
     contenttag = entry.getElementsByTagName('content').item(0)
     textnode = contenttag.firstChild
     html = textnode.nodeValue
+
+    # Fixups for bad interactions later
+    html = html.replace('<blockquote><pre>', '<pre>').replace('</pre></blockquote>', '</pre>')
+    html = html.replace('<blockquote><code>', '<pre>').replace('</code></blockquote>', '</pre>')
+    html = html.replace('<tt><b>', '<b><tt>').replace('</b></tt>', '</tt></b>')
     return html2text(html)
 
 
