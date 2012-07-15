@@ -88,7 +88,7 @@ def print_post(entry, tags):
     updated_date = get_date(entry, 'updated')
 
     author = get_author_name(entry)
-    title = get_title(entry)
+    title = get_title(entry).replace('"', '&quot;')
     permalink = get_permalink(entry)
     filename = extract_filename(permalink)
     content = get_content(entry)
