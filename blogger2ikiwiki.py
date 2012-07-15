@@ -78,6 +78,7 @@ def get_content(entry):
     html = html.replace('<blockquote><pre>', '<pre>').replace('</pre></blockquote>', '</pre>')
     html = html.replace('<blockquote><code>', '<pre>').replace('</code></blockquote>', '</pre>')
     html = html.replace('<tt><b>', '<b><tt>').replace('</b></tt>', '</tt></b>')
+    html = html.replace('<code></code>', '').replace('<tt></tt>', '')
     return html2text(html)
 
 
