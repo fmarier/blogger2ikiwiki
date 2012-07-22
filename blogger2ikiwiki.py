@@ -128,6 +128,9 @@ def get_content(entry):
     # Fixups for bad interactions later
     html = html.replace('<blockquote><pre>', '<pre>').replace('</pre></blockquote>', '</pre>')
     html = html.replace('<blockquote><code>', '<pre>').replace('</code></blockquote>', '</pre>')
+    html = html.replace('<blockquote><tt>', '<pre>').replace('</tt></blockquote>', '</pre>')
+    html = html.replace('</tt><br /></blockquote>', '</pre>')
+    html = html.replace('<pre><blockquote>', '<pre>').replace('</blockquote></pre>', '</pre>')
     html = html.replace('<tt><b>', '<b><tt>').replace('</b></tt>', '</tt></b>')
     html = html.replace('<code></code>', '').replace('<tt></tt>', '')
     html = html.replace('<br /></li><li>', '</li><li>')
