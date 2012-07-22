@@ -533,9 +533,12 @@ class HTML2Text(HTMLParser.HTMLParser):
                 else:
                     list_style = tag
                 numbering_start = list_numbering_start(attrs)
+                self.p()
                 self.list.append({'name':list_style, 'num':numbering_start})
             else:
-                if self.list: self.list.pop()
+                if self.list:
+                    self.list.pop()
+                    self.p()
             self.lastWasList = True
         else:
             self.lastWasList = False
