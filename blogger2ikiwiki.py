@@ -75,6 +75,20 @@ def get_permalink(entry):
             href = link.getAttribute('href').split('?')
             return href[0]
 
+def escape_most_tags(line):
+    line = line.replace('<i>', 'OPEN_BRACKET_I_CLOSE_BRACKET')
+    line = line.replace('</i>', 'OPEN_BRACKET_SLASH_I_CLOSE_BRACKET')
+    line = line.replace('<b>', 'OPEN_BRACKET_B_CLOSE_BRACKET')
+    line = line.replace('</b>', 'OPEN_BRACKET_SLASH_B_CLOSE_BRACKET')
+
+    line = line.replace('<', '&lt;')
+    line = line.replace('>', '&gt;')
+
+    line = line.replace('OPEN_BRACKET_I_CLOSE_BRACKET', '<i>')
+    line = line.replace('OPEN_BRACKET_SLASH_I_CLOSE_BRACKET', '</i>')
+    line = line.replace('OPEN_BRACKET_B_CLOSE_BRACKET', '<b>')
+    line = line.replace('OPEN_BRACKET_SLASH_B_CLOSE_BRACKET', '</b>')
+    return line
 
 def post_process_pre(text):
     out = []
@@ -96,7 +110,7 @@ def post_process_pre(text):
             out.append('<pre>')
             # remove the indentation and add <pre> and </pre> tags
             for l in pre_lines:
-                out.append(l[4:])
+                out.append(escape_most_tags(l[4:]))
             out.append('</pre>')
         elif in_pre:
             pre_lines.append(line)
