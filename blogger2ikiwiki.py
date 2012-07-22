@@ -31,6 +31,9 @@ ATOM_BACKUP_FILENAME = '../feedingthecloud.xml'
 
 LICENSE_LINK = '[Creative Commons Attribution-Share Alike 3.0 New Zealand License](http://creativecommons.org/licenses/by-sa/3.0/nz/)'
 
+AUTHOR_URL_REPLACEMENTS = {'http://www.blogger.com/profile/15799633745688818389': 'http://fmarier.org'}
+
+
 def get_author_name(entry):
     author = entry.getElementsByTagName('author').item(0)
     nametag = author.getElementsByTagName('name').item(0)
@@ -43,7 +46,11 @@ def get_author_uri(entry):
     uritags = author.getElementsByTagName('uri')
     if uritags:
         textnode = uritags.item(0).firstChild
-        return textnode.nodeValue
+        url = textnode.nodeValue
+        if url in AUTHOR_URL_REPLACEMENTS:
+            return AUTHOR_URL_REPLACEMENTS[url]
+        else:
+            return url
     return None
 
 
