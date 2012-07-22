@@ -76,6 +76,36 @@ def get_permalink(entry):
             return href[0]
 
 
+def post_process_pre(text):
+    out = []
+
+    lines = text.split("\n")
+    in_pre = False
+    pre_lines = []
+    for line in lines:
+        if "<!-- START PRE -->" == line:
+            in_pre = True
+            pre_lines = []
+        elif "<!-- END PRE WITHOUT TAGS -->" == line:
+            in_pre = False
+            out.append('')
+            out += pre_lines
+            out.append('')
+        elif "<!-- END PRE WITH TAGS -->" == line:
+            in_pre = False
+            out.append('<pre>')
+            # remove the indentation and add <pre> and </pre> tags
+            for l in pre_lines:
+                out.append(l[4:])
+            out.append('</pre>')
+        elif in_pre:
+            pre_lines.append(line)
+        else:
+            out.append(line)
+
+    return "\n".join(out)
+
+
 def get_content(entry):
     contenttag = entry.getElementsByTagName('content').item(0)
     textnode = contenttag.firstChild
@@ -87,7 +117,8 @@ def get_content(entry):
     html = html.replace('<tt><b>', '<b><tt>').replace('</b></tt>', '</tt></b>')
     html = html.replace('<code></code>', '').replace('<tt></tt>', '')
     html = html.replace('<br /></li><li>', '</li><li>')
-    return html2text(html)
+    text = html2text(html)
+    return post_process_pre(text)
 
 
 def extract_filename(permalink):

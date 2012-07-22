@@ -211,6 +211,7 @@ class HTML2Text(HTMLParser.HTMLParser):
         self.pre = 0
         self.table = 0
         self.startpre = 0
+        self.tags_in_pre = 0
         self.code = False
         self.br_toggle = ''
         self.lastWasNL = 0
@@ -429,17 +430,21 @@ class HTML2Text(HTMLParser.HTMLParser):
         if tag in ['em', 'i', 'u'] and not self.ignore_emphasis:
             if not self.pre:
                 self.o("_")
-            elif start:
-                self.o("<i>")
             else:
-                self.o("</i>")
+                self.tags_in_pre = 1
+                if start:
+                    self.o("<i>")
+                else:
+                    self.o("</i>")
         if tag in ['strong', 'b'] and not self.ignore_emphasis:
             if not self.pre:
                 self.o("**")
-            elif start:
-                self.o("<b>")
             else:
-                self.o("</b>")
+                self.tags_in_pre = 1
+                if start:
+                    self.o("<b>")
+                else:
+                    self.o("</b>")
         if tag in ['del', 'strike', 's']:
             if start:
                 self.o("<"+tag+">")
@@ -568,12 +573,20 @@ class HTML2Text(HTMLParser.HTMLParser):
                 self.o("</"+tag+">")
 
         if tag == "pre":
+            self.pbr()
             if start:
+                self.o("<!-- START PRE -->")
                 self.startpre = 1
                 self.pre = 1
+                self.pbr()
             else:
                 self.pre = 0
-            self.p()
+                if self.tags_in_pre:
+                    self.o("<!-- END PRE WITH TAGS -->")
+                else:
+                    self.o("<!-- END PRE WITHOUT TAGS -->")
+                self.tags_in_pre = 0
+                self.p()
 
     def pbr(self):
         if self.p_p == 0: self.p_p = 1
