@@ -19,6 +19,7 @@
 
 from hashlib import md5
 import os
+import re
 import sys
 from urlparse import urlparse
 import xml.dom.minidom as minidom
@@ -90,6 +91,7 @@ def escape_most_tags(line):
     line = line.replace('OPEN_BRACKET_SLASH_B_CLOSE_BRACKET', '</b>')
     return line
 
+
 def post_process_pre(text):
     out = []
 
@@ -120,6 +122,32 @@ def post_process_pre(text):
     return "\n".join(out)
 
 
+image_regexp = re.compile('\[!\[\]\([^)]+\)\]\(([^)]+)\)')
+htmlimage_regexp = re.compile('(\(http://([^.]+.){2}blogspot.com/[^()]+/)s1600-h/')
+def post_process_images(text):
+    # Fix image links going to HTML pages
+    text = htmlimage_regexp.sub(r'\1s1600/', text)
+
+    # Find Blogger-hosted images
+    images = image_regexp.finditer(text)
+    for image in images:
+        # TODO: Download high-res images
+        print image.group(1)
+
+    # Output the final image tag
+    text = image_regexp.sub(r'![](\1)', text)
+    return text
+
+
+def post_process(text, is_comment):
+    text = post_process_pre(text)
+
+    if not is_comment:
+        text = post_process_images(text)
+
+    return text
+
+
 def get_content(entry, is_comment):
     contenttag = entry.getElementsByTagName('content').item(0)
     textnode = contenttag.firstChild
@@ -143,7 +171,7 @@ def get_content(entry, is_comment):
         html = html.replace('<br />-- <br />',  '<br />')
 
     text = html2text(html)
-    return post_process_pre(text)
+    return post_process(text, is_comment)
 
 
 def extract_filename(permalink):
