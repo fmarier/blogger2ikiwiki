@@ -21,6 +21,7 @@ from hashlib import md5
 import os
 import re
 import sys
+import urllib2
 from urlparse import urlparse
 import xml.dom.minidom as minidom
 
@@ -124,31 +125,54 @@ def post_process_pre(text):
 
 image_regexp = re.compile('\[!\[\]\([^)]+\)\]\(([^)]+)\)')
 htmlimage_regexp = re.compile('(\(http://([^.]+.){2}blogspot.com/[^()]+/)s1600-h/')
-def post_process_images(text):
+filename_regexp = re.compile('.*/([^/]+\.(jpg|png))')
+def post_process_images(text, image_directory):
+    local_images = {}
+
     # Fix image links going to HTML pages
     text = htmlimage_regexp.sub(r'\1s1600/', text)
 
-    # Find Blogger-hosted images
+    # Find full-size Blogger-hosted images
     images = image_regexp.finditer(text)
     for image in images:
-        # TODO: Download high-res images
-        print image.group(1)
+        image_url = image.group(1)
+        m = filename_regexp.match(image_url)
+        if m:
+             fh = urllib2.urlopen(image_url)
+             contents = fh.read()
+
+             # Save to disk
+             filename = m.group(1)
+             with open("%s/%s" % (image_directory, filename), 'w') as f:
+                 f.write(contents)
+
+             local_images[image_url] = filename
+        else:
+            print 'ERROR: unsupported Blogger image URL'
 
     # Output the final image tag
     text = image_regexp.sub(r'![](\1)', text)
+
+    # Convert the Blogger-hosted URLs to the local filenames
+    for blogger_url in local_images:
+        text = text.replace(blogger_url, local_images[blogger_url])
+
     return text
 
 
-def post_process(text, is_comment):
+def post_process(text, post_filename, is_comment):
     text = post_process_pre(text)
 
     if not is_comment:
-        text = post_process_images(text)
+        image_directory = post_filename.split('.mdwn')[0]
+        if not os.path.isdir(image_directory):
+            os.mkdir(image_directory)
+        text = post_process_images(text, image_directory)
 
     return text
 
 
-def get_content(entry, is_comment):
+def get_content(entry, post_filename, is_comment):
     contenttag = entry.getElementsByTagName('content').item(0)
     textnode = contenttag.firstChild
     html = textnode.nodeValue
@@ -171,7 +195,7 @@ def get_content(entry, is_comment):
         html = html.replace('<br />-- <br />',  '<br />')
 
     text = html2text(html)
-    return post_process(text, is_comment)
+    return post_process(text, post_filename, is_comment)
 
 
 def extract_filename(permalink):
@@ -189,7 +213,7 @@ def print_post(entry, tags):
     title = get_title(entry).replace('"', '&quot;')
     permalink = get_permalink(entry)
     filename = extract_filename(permalink)
-    content = get_content(entry, False)
+    content = get_content(entry, filename, False)
 
     s = '[[!meta title="' + title + '"]]' + "\n"
     s += '[[!meta date="' + published_date + '"]]' + "\n"
@@ -209,7 +233,7 @@ def print_comment(entry):
 
     permalink = get_permalink(entry)
     filename = extract_filename(permalink)
-    content = get_content(entry, True)
+    content = get_content(entry, filename, True)
 
     s = '[[!comment format=mdwn' + "\n"
     if author_uri:
