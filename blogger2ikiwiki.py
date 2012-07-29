@@ -120,7 +120,7 @@ def post_process_pre(text):
     return "\n".join(out)
 
 
-def get_content(entry):
+def get_content(entry, is_comment):
     contenttag = entry.getElementsByTagName('content').item(0)
     textnode = contenttag.firstChild
     html = textnode.nodeValue
@@ -134,6 +134,14 @@ def get_content(entry):
     html = html.replace('<tt><b>', '<b><tt>').replace('</b></tt>', '</tt></b>')
     html = html.replace('<code></code>', '').replace('<tt></tt>', '')
     html = html.replace('<br /></li><li>', '</li><li>')
+
+    if is_comment:
+        # Hacks specific to misinterpreted codes in the original plaintext
+        html = html.replace('<BR/>#',  '<br />\#')
+        html = html.replace('<BR/>*',  '<br />\*')
+        html = html.replace('<br />#',  '<br />\#')
+        html = html.replace('<br />-- <br />',  '<br />')
+
     text = html2text(html)
     return post_process_pre(text)
 
@@ -153,7 +161,7 @@ def print_post(entry, tags):
     title = get_title(entry).replace('"', '&quot;')
     permalink = get_permalink(entry)
     filename = extract_filename(permalink)
-    content = get_content(entry)
+    content = get_content(entry, False)
 
     s = '[[!meta title="' + title + '"]]' + "\n"
     s += '[[!meta date="' + published_date + '"]]' + "\n"
@@ -173,7 +181,7 @@ def print_comment(entry):
 
     permalink = get_permalink(entry)
     filename = extract_filename(permalink)
-    content = get_content(entry)
+    content = get_content(entry, True)
 
     s = '[[!comment format=mdwn' + "\n"
     if author_uri:
