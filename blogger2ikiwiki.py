@@ -123,6 +123,29 @@ def post_process_pre(text):
     return "\n".join(out)
 
 
+def post_process_tt_code(text):
+    out = []
+
+    lines = text.split("\n")
+    in_pre = False
+    pre_lines = []
+    for line in lines:
+        if "<!-- START TT -->" in line:
+            if "<!-- END TT WITHOUT TAGS -->" in line:
+                out.append(line.replace('<!-- START TT -->', '`').replace('<!-- END TT WITHOUT TAGS -->', '`'))
+            elif "<!-- END TT WITH TAGS -->" in line:
+                out.append(line.replace('<!-- START TT -->', '<tt>').replace('<!-- END TT WITH TAGS -->', '</tt>'))
+        elif "<!-- START CODE -->" in line:
+            if "<!-- END CODE WITHOUT TAGS -->" in line:
+                out.append(line.replace('<!-- START CODE -->', '`').replace('<!-- END CODE WITHOUT TAGS -->', '`'))
+            elif "<!-- END CODE WITH TAGS -->" in line:
+                out.append(line.replace('<!-- START CODE -->', '<code>').replace('<!-- END CODE WITH TAGS -->', '</code>'))
+        else:
+            out.append(line)
+
+    return "\n".join(out)
+
+
 image_regexp = re.compile('\[!\[\]\([^)]+\)\]\(([^)]+)\)')
 htmlimage_regexp = re.compile('(\(http://([^.]+.){2}blogspot.com/[^()]+/)s1600-h/')
 filename_regexp = re.compile('.*/([^/]+\.(jpg|png))')
@@ -162,6 +185,7 @@ def post_process_images(text, image_directory):
 
 def post_process(text, post_filename, is_comment):
     text = post_process_pre(text)
+    text = post_process_tt_code(text)
 
     if not is_comment:
         image_directory = post_filename.split('.mdwn')[0]

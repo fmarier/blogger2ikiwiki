@@ -212,6 +212,10 @@ class HTML2Text(HTMLParser.HTMLParser):
         self.table = 0
         self.startpre = 0
         self.tags_in_pre = 0
+        self.in_tt = False
+        self.tags_in_tt = False
+        self.in_code = False
+        self.tags_in_code = False
         self.code = False
         self.br_toggle = ''
         self.lastWasNL = 0
@@ -428,23 +432,37 @@ class HTML2Text(HTMLParser.HTMLParser):
                 self.p()
 
         if tag in ['em', 'i', 'u'] and not self.ignore_emphasis:
-            if not self.pre:
-                self.o("_")
-            else:
-                self.tags_in_pre = 1
+            if self.pre or self.in_code or self.in_tt:
+                if self.pre:
+                    self.tags_in_pre = 1
+                elif self.in_code:
+                    self.tags_in_code = 1
+                elif self.in_tt:
+                    self.tags_in_tt = 1
+
                 if start:
                     self.o("<i>")
                 else:
                     self.o("</i>")
-        if tag in ['strong', 'b'] and not self.ignore_emphasis:
-            if not self.pre:
-                self.o("**")
             else:
-                self.tags_in_pre = 1
+                self.o("_")
+
+        if tag in ['strong', 'b'] and not self.ignore_emphasis:
+            if self.pre or self.in_code or self.in_tt:
+                if self.pre:
+                    self.tags_in_pre = 1
+                elif self.in_code:
+                    self.tags_in_code = 1
+                elif self.in_tt:
+                    self.tags_in_tt = 1
+
                 if start:
                     self.o("<b>")
                 else:
                     self.o("</b>")
+            else:
+                self.o("**")
+
         if tag in ['del', 'strike', 's']:
             if start:
                 self.o("<"+tag+">")
@@ -456,7 +474,30 @@ class HTML2Text(HTMLParser.HTMLParser):
                 # handle some font attributes, but leave headers clean
                 self.handle_emphasis(start, tag_style, parent_style)
 
-        if tag in ["code", "tt"] and not self.pre: self.o('`') #TODO: `` `this` ``
+        #TODO: `` `this` ``
+        if tag == 'tt' and not self.pre:
+            if start:
+                self.in_tt = True
+                self.o('<!-- START TT -->')
+            else:
+                if self.tags_in_tt:
+                    self.o('<!-- END TT WITH TAGS -->')
+                else:
+                    self.o('<!-- END TT WITHOUT TAGS -->')
+                self.in_tt = False
+                self.tags_in_tt = False
+        if tag == 'code' and not self.pre:
+            if start:
+                self.in_code = True
+                self.o('<!-- START CODE -->')
+            else:
+                if self.tags_in_code:
+                    self.o('<!-- END CODE WITH TAGS -->')
+                else:
+                    self.o('<!-- END CODE WITHOUT TAGS -->')
+                self.in_code = False
+                self.tags_in_code = False
+
         if tag == "abbr":
             if start:
                 self.abbr_title = None
