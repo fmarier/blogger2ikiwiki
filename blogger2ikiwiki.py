@@ -208,6 +208,7 @@ def get_content(entry, post_filename, is_comment):
     html = html.replace('</tt><br /></blockquote>', '</pre>')
     html = html.replace('<pre><blockquote>', '<pre>').replace('</blockquote></pre>', '</pre>')
     html = html.replace('<tt><b>', '<b><tt>').replace('</b></tt>', '</tt></b>')
+    html = html.replace('<tt><a ', '<a ').replace('</a></tt>', '</a>')
     html = html.replace('<code></code>', '').replace('<tt></tt>', '')
     html = html.replace('<br /></li><li>', '</li><li>')
 
