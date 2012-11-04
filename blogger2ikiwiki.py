@@ -35,6 +35,11 @@ LICENSE_LINK = '[Creative Commons Attribution-Share Alike 3.0 New Zealand Licens
 
 AUTHOR_URL_REPLACEMENTS = {'http://www.blogger.com/profile/15799633745688818389': 'http://fmarier.org'}
 
+# Must include the trailing slash!
+BLOG_URL = 'http://feeding.cloud.geek.nz/'
+
+TAGGED_FEEDS = ['debian', 'mozilla', 'nzoss', 'ubuntu', 'postgres', 'sysadmin', 'django', 'python']
+
 
 def get_author_name(entry):
     author = entry.getElementsByTagName('author').item(0)
@@ -246,7 +251,7 @@ def print_post(entry, tags):
     s += content + "\n"
     for tag in tags:
         s += "[[!tag " + tag + "]] "
-    return (filename, s)
+    return (filename, s, permalink)
 
 
 def print_comment(entry):
@@ -301,9 +306,40 @@ def save_comment(post_filename, contents):
     return save_file(directory + '/' + filename, contents)
 
 
+def old_and_new_urls(permalink):
+    components = urlparse(permalink)
+    paths = components.path.split('/')
+    filename = paths[-1]
+    new_url = BLOG_URL + 'posts/' + filename.split('.html')[0] +  '/'
+    return (components.path, new_url)
+
+
+def save_rewrite_rules(filename, rewrite_rules):
+    with open(filename, 'w') as f:
+        f.write("# These rules require that mod_alias be enabled\n\n")
+
+        if TAGGED_FEEDS:
+            f.write("# Tagged feeds\n")
+            for tag in TAGGED_FEEDS:
+                old_tag_path = '/feeds/posts/default/-/%s' % tag
+                new_tag_url = BLOG_URL + 'tags/%s/index.rss' % tag
+                f.write("Redirect permanent %s %s\n" % (old_tag_path, new_tag_url))
+
+                old_tag_path = '/search/label/%s' % tag
+                new_tag_url = BLOG_URL + 'tags/%s' % tag
+                f.write("Redirect permanent %s %s\n" % (old_tag_path, new_tag_url))
+            f.write("\n")
+
+        f.write("# Articles\n")
+        for rule in rewrite_rules:
+            f.write("Redirect permanent %s %s\n" % (rule[0], rule[1]))
+    f.close()
+
+
 document = minidom.parse(ATOM_BACKUP_FILENAME)
 feed = document.getElementsByTagName('feed').item(0)
 
+rewrite_rules = []
 entries = feed.getElementsByTagName('entry')
 for entry in entries:
     is_post = False
@@ -325,8 +361,11 @@ for entry in entries:
             tags.append(term)
 
     if is_post:
-        (filename, post) = print_post(entry, tags)
+        (filename, post, permalink) = print_post(entry, tags)
         save_file(filename, post)
+        rewrite_rules.append(old_and_new_urls(permalink))
     elif is_comment:
         (filename, comment) = print_comment(entry)
         save_comment(filename, comment)
+
+save_rewrite_rules("apache-aliases.conf", rewrite_rules)
