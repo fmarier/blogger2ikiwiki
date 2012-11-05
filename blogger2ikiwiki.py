@@ -38,7 +38,7 @@ AUTHOR_URL_REPLACEMENTS = {'http://www.blogger.com/profile/15799633745688818389'
 # Must include the trailing slash!
 BLOG_URL = 'http://feeding.cloud.geek.nz/'
 
-TAGGED_FEEDS = ['debian', 'mozilla', 'nzoss', 'ubuntu', 'postgres', 'sysadmin', 'django', 'python']
+TAGGED_FEEDS = ['debian', 'mozilla', 'nzoss', 'ubuntu', 'postgres', 'sysadmin', 'django', 'python', 'nodejs']
 
 
 def get_author_name(entry):
