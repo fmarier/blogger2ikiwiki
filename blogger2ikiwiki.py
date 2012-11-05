@@ -183,7 +183,8 @@ def post_process_images(text, image_directory):
 
     # Convert the Blogger-hosted URLs to the local filenames
     for blogger_url in local_images:
-        text = text.replace(blogger_url, local_images[blogger_url])
+        absolute_image_url = '/posts/' + image_directory + '/' + local_images[blogger_url]
+        text = text.replace(blogger_url, absolute_image_url)
 
     return text
 
